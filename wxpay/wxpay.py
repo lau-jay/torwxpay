@@ -1,18 +1,24 @@
 #!/usr/bin/env python3
 # coding=utf-8
-# code fork from https://github.com/pyclear/wzhifuSDK
-from __future__ import absolute_import
+# author Pyclearl
+# Base code fork from https://github.com/pyclear/wzhifuSDK
 
 import json
-import random
 import time
+import random
 import hashlib
 
-from xml.etree import ElementTree
 from urllib.parse import quote
+from xml.etree import ElementTree
 
 from tornado import gen
 from tornado.httpclient import AsyncHTTPClient
+
+from config import wxpay_conf
+
+# The following is wechat pay current URL, please check before using.
+UNIFIED_ORDER_URL = 'https://api.mch.weixin.qq.com/pay/unifiedorder'
+ORDER_QUERY_URL = 'https://api.mch.weixin.qq.com/pay/orderquery'
 
 
 class HtppClient:
@@ -20,9 +26,9 @@ class HtppClient:
     @gen.coroutine
     def post_xml(url, data=None):
         try:
-            wechat = AsyncHTTPClient(force_instance=True,
-                                     defaults={'Content-Type': 'text/xml'})
-            res = yield wechat.fetch(url, method='POST', body=data)
+            request = AsyncHTTPClient(force_instance=True,
+                                      defaults={'Content-Type': 'text/xml'})
+            res = yield request.fetch(url, method='POST', body=data)
         except Exception as e:
             return {}
         else:
@@ -34,9 +40,9 @@ class HtppClient:
     def post_xml_ssl(url, method='POST', data=None):
         # TODO 附带证书没做
         try:
-            wechat = AsyncHTTPClient(force_instance=True,
-                                     defaults={'Content-Type': 'text/xml'})
-            res = yield wechat.fetch(url, method=method, body=data)
+            request = AsyncHTTPClient(force_instance=True,
+                                      defaults={'Content-Type': 'text/xml'})
+            res = yield request.fetch(url, method=method, body=data)
         except Exception as e:
             return {}
         else:
@@ -50,8 +56,6 @@ class WxPayBasic:
     """
 
     def trim_string(self, value):
-        """
-        """
         if value is not None and len(value) == 0:
             value = None
         return value
@@ -80,7 +84,7 @@ class WxPayBasic:
         # 签名步骤一：按字典序排序参数,format_query_param已做
         ordered_string = self.format_query_param(params, False)
         # 签名步骤二：在string后加入KEY
-        raw_string = "{0}&key={1}".format(ordered_string, WechatConfig['key'])
+        raw_string = "{0}&key={1}".format(ordered_string, wxpay_conf.key)
         # 签名步骤三：加密
         sign = algo_map[sign_type](raw_string.encode('utf8')).hexdigest()
         # 签名步骤四：所有字符转为大写
@@ -133,8 +137,8 @@ class WxPayClient(WxPayBasic):
 
     def create_xml(self):
         """设置标配的请求参数，生成签名，生成接口参数xml"""
-        self.parameters["appid"] = WechatConfig['app_id']  # 公众账号ID
-        self.parameters["mch_id"] = WechatConfig['key']   # 商户号
+        self.parameters["appid"] = wxpay_conf.app_id  # 公众账号ID
+        self.parameters["mch_id"] = wxpay_conf.key   # 商户号
         self.parameters["nonce_str"] = self.create_onceStr()   # 随机字符串
         self.parameters["sign"] = self.gen_sign(self.parameters)  # 签名
         return self.to_xml(self.parameters)
@@ -157,7 +161,7 @@ class UnifiedOrder(WxPayClient):
 
     def __init__(self):
         # 设置接口链接
-        self.url = WechatConfig['unified_order_uri']
+        self.url = UNIFIED_ORDER_URL
         super().__init__()
 
     def create_xml(self):
@@ -169,8 +173,8 @@ class UnifiedOrder(WxPayClient):
         if self.parameters["trade_type"] == "JSAPI" and self.parameters["openid"] is None:
             raise ValueError("JSAPI need openid parameters")
 
-        self.parameters["appid"] = WechatConfig['app_id']  # 公众账号ID
-        self.parameters["mch_id"] = WechatConfig['mch_id']  # 商户号
+        self.parameters["appid"] = wxpay_conf.app_id  # 公众账号ID
+        self.parameters["mch_id"] = wxpay_conf.mch_id  # 商户号
         self.parameters["spbill_create_ip"] = "127.0.0.1"  # 终端ip
         self.parameters["nonce_str"] = self.create_onceStr()  # 随机字符串
         self.parameters["sign"] = self.gen_sign(self.parameters)  # 签名
@@ -198,7 +202,7 @@ class JsApi(WxPayBasic):
 
     def get_parameters(self):
         js_api_obj = {}
-        js_api_obj["appId"] = WechatConfig['app_id']
+        js_api_obj["appId"] = wxpay_conf.app_id
         js_api_obj["timeStamp"] = "{0}".format(self.timestamp)
         js_api_obj["nonceStr"] = self.create_onceStr()
         js_api_obj["package"] = "prepay_id={0}".format(self.prepay_id)
@@ -212,7 +216,7 @@ class OrderQuery(WxPayClient):
 
     def __init__(self):
         # 设置接口链接
-        self.url = WechatConfig['order_query_uri']
+        self.url = ORDER_QUERY_URL
         super().__init__()
 
     def createXml(self):
@@ -222,14 +226,14 @@ class OrderQuery(WxPayClient):
         if all(self.parameters.get(key) is None for key in ("out_trade_no", "transaction_id", )):
             raise ValueError("missing parameter")
 
-        self.parameters["appid"] = WechatConfig['app_id']  # 公众账号ID
-        self.parameters["mch_id"] = WechatConfig['mch_id']  # 商户号
+        self.parameters["appid"] = wxpay_conf.app_id  # 公众账号ID
+        self.parameters["mch_id"] = wxpay_conf.mch_id  # 商户号
         self.parameters["nonce_str"] = self.create_onceStr()  # 随机字符串
         self.parameters["sign"] = self.gen_sign(self.parameters)  # 签名
         return self.to_xml(self.parameters)
 
 
-class WxPayServer(WxPayBasic):
+class WxPayNotify(WxPayBasic):
     """响应型接口基类"""
     SUCCESS, FAIL = "SUCCESS", "FAIL"
 
@@ -268,6 +272,6 @@ class WxPayServer(WxPayBasic):
         return return_xml
 
 
-class Notify(WxPayServer):
+class Notify(WxPayNotify):
     """通用通知接口"""
     pass
