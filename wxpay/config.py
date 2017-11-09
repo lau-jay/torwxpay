@@ -1,7 +1,8 @@
 # coding=utf-8
 
-app_id = ''
-mch_id = ''
-key = ''
+class wxpay_conf:
+	app_id = ''
+	mch_id = ''
+	key = ''
 
 

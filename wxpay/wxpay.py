@@ -7,14 +7,16 @@ import json
 import time
 import random
 import hashlib
-
+import better_exceptions
 from urllib.parse import quote
 from xml.etree import ElementTree
 
 from tornado import gen
 from tornado.httpclient import AsyncHTTPClient
 
-from config import wxpay_conf
+from .config import wxpay_conf
+
+better_exceptions.MAX_LENGTH = None
 
 # The following is wechat pay current URL, please check before using.
 UNIFIED_ORDER_URL = 'https://api.mch.weixin.qq.com/pay/unifiedorder'
@@ -71,7 +73,7 @@ class WxPayBasic:
         """格式化参数，签名过程需要使用"""
         ordered_params = sorted(params)
         tmp = []
-        for k in ordered_params.items():
+        for k in ordered_params:
             v = quote(params[k]) if is_urlencode else params[k]
             tmp.append("{0}={1}".format(k, v))
         return "&".join(tmp)
