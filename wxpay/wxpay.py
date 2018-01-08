@@ -225,7 +225,7 @@ class OrderQuery(WxPayClient):
         """生成接口参数xml"""
 
         # 检测必填参数
-        if not any(self.parameters.get(key) for key in ("out_trade_no", "transaction_id", )):
+        if not any(self.parameters.get(key, '') for key in ("out_trade_no", "transaction_id", )):
             raise ValueError("missing parameter")
 
         self.parameters["appid"] = wxpay_conf.app_id  # 公众账号ID
