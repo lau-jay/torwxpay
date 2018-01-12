@@ -224,7 +224,7 @@ class OrderQuery(WxPayClient):
     def createXml(self):
         """生成接口参数xml"""
 
-        # 检测必填参数
+        # 二者必填其一
         if not any(self.parameters.get(key, '') for key in ("out_trade_no", "transaction_id", )):
             raise ValueError("missing parameter")
 
