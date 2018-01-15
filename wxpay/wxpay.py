@@ -62,7 +62,7 @@ class WxPayBasic:
             value = None
         return value
 
-    def create_onceStr(self, length=16):
+    def random_str(self, length=16):
         chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
         sa = []
         for _ in range(length):
@@ -141,7 +141,7 @@ class WxPayClient(WxPayBasic):
         """设置标配的请求参数，生成签名，生成接口参数xml"""
         self.parameters["appid"] = wxpay_conf.app_id  # 公众账号ID
         self.parameters["mch_id"] = wxpay_conf.key   # 商户号
-        self.parameters["nonce_str"] = self.create_onceStr()   # 随机字符串
+        self.parameters["nonce_str"] = self.random_str()   # 随机字符串
         self.parameters["sign"] = self.gen_sign(self.parameters)  # 签名
         return self.to_xml(self.parameters)
 
@@ -178,7 +178,7 @@ class UnifiedOrder(WxPayClient):
         self.parameters["appid"] = wxpay_conf.app_id  # 公众账号ID
         self.parameters["mch_id"] = wxpay_conf.mch_id  # 商户号
         self.parameters["spbill_create_ip"] = "127.0.0.1"  # 终端ip
-        self.parameters["nonce_str"] = self.create_onceStr()  # 随机字符串
+        self.parameters["nonce_str"] = self.random_str()  # 随机字符串
         self.parameters["sign"] = self.gen_sign(self.parameters)  # 签名
         return self.to_xml(self.parameters)
 
@@ -206,7 +206,7 @@ class JsApi(WxPayBasic):
         js_api_obj = {}
         js_api_obj["appId"] = wxpay_conf.app_id
         js_api_obj["timeStamp"] = "{0}".format(self.timestamp)
-        js_api_obj["nonceStr"] = self.create_onceStr()
+        js_api_obj["nonceStr"] = self.random_str()
         js_api_obj["package"] = "prepay_id={0}".format(self.prepay_id)
         js_api_obj["signType"] = "MD5"
         js_api_obj["paySign"] = self.gen_sign(js_api_obj)
@@ -221,7 +221,7 @@ class OrderQuery(WxPayClient):
         self.url = ORDER_QUERY_URL
         super().__init__()
 
-    def createXml(self):
+    def create_xml(self):
         """生成接口参数xml"""
 
         # 二者必填其一
@@ -230,7 +230,7 @@ class OrderQuery(WxPayClient):
 
         self.parameters["appid"] = wxpay_conf.app_id  # 公众账号ID
         self.parameters["mch_id"] = wxpay_conf.mch_id  # 商户号
-        self.parameters["nonce_str"] = self.create_onceStr()  # 随机字符串
+        self.parameters["nonce_str"] = self.random_str()  # 随机字符串
         self.parameters["sign"] = self.gen_sign(self.parameters)  # 签名
         return self.to_xml(self.parameters)
 
@@ -268,10 +268,10 @@ class WxPayNotify(WxPayBasic):
         """生成接口参数xml"""
         return self.to_xml(self.return_parameters)
 
-    def return_xml(self):
+    def response_xml(self):
         """将xml数据返回微信"""
-        return_xml = self.create_xml()
-        return return_xml
+        respone_xml = self.create_xml()
+        return response_xml
 
 
 class Notify(WxPayNotify):
