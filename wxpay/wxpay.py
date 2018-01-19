@@ -56,7 +56,6 @@ class WxPayBasic:
     """
        WxPay Base Class
     """
-
     def trim_string(self, value):
         if value is not None and len(value) == 0:
             value = None
@@ -69,7 +68,7 @@ class WxPayBasic:
             sa.append(random.choice(chars))
         return ''.join(sa)
 
-    def format_query_param(self, params, is_urlencode):
+    def format_query_param(self, params, is_urlencode=False):
         """格式化参数，签名过程需要使用"""
         ordered_params = sorted(params)
         tmp = []
@@ -159,7 +158,6 @@ class WxPayClient(WxPayBasic):
 
 class UnifiedOrder(WxPayClient):
     """统一支付接口类"""
-
     def __init__(self):
         # 设置接口链接
         self.url = UNIFIED_ORDER_URL
@@ -225,6 +223,7 @@ class UnifiedOrderH5(WxPayClient):
         yield self.get_result()
         return self.result
 
+
 class JsApi(WxPayBasic):
     """
       JSAPI 支付--微信内H5网页端掉调起支付接口
@@ -249,7 +248,6 @@ class JsApi(WxPayBasic):
 
 class OrderQuery(WxPayClient):
     """订单查询接口"""
-
     def __init__(self):
         # 设置接口链接
         self.url = ORDER_QUERY_URL
@@ -272,7 +270,6 @@ class OrderQuery(WxPayClient):
 class WxPayNotify(WxPayBasic):
     """响应型接口基类"""
     SUCCESS, FAIL = "SUCCESS", "FAIL"
-
     def __init__(self):
         self.data = {}  # 接收到的数据
         self.return_parameters = {}  # 返回参数

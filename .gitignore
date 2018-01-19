@@ -311,5 +311,6 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+.idea
 
 # End of https://www.gitignore.io/api/python,virtualenv,vim,emacs,linux,macos,windows,pycharm,jetbrains

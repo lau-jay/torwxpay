@@ -19,9 +19,9 @@ class WxPayBasicTest(AsyncTestCase):
         self.assertIsNone(self.basic.trim_string({}))
         self.assertEqual(self.basic.trim_string('123'), '123')
 
-    def test_create_onceStr(self):
-        self.assertEqual(len(self.basic.create_onceStr(32)), 32)
-        self.assertNotEqual(len(self.basic.create_onceStr(31)), 32)
+    def test_create_random_str(self):
+        self.assertEqual(len(self.basic.random_str(32)), 32)
+        self.assertNotEqual(len(self.basic.random_str(31)), 32)
 
     def test_format_query_param(self):
         params = {'axx': '123456', 'dcebc': 'xxxx', 'appid': 'asfas'}
