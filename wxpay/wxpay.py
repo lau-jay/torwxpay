@@ -145,17 +145,16 @@ class WxPayClient(WxPayBasic):
         self.parameters["sign"] = self.gen_sign(self.parameters)  # 签名
         return self.to_xml(self.parameters)
 
+    @gen.coroutine
     def get_result(self):
         """获取结果，默认不使用证书"""
-        self.post_xml()
+        yield self.post_xml()
         self.result = self.to_dict(self.response)
-        return self.result
 
     @gen.coroutine
     def post_xml(self):
         xml = self.create_xml()
         self.response = yield self.post_xml_async(self.url, xml)
-        return self.response
 
 
 class UnifiedOrder(WxPayClient):
@@ -185,15 +184,50 @@ class UnifiedOrder(WxPayClient):
     @gen.coroutine
     def get_prepay_id(self):
         """获取prepay_id"""
-        yield self.post_xml()
-        self.result = self.to_dict(self.response)
-        prepay_id = self.result.get("prepay_id", None)
-        return prepay_id
+        yield self.get_result()
+        return self.result.get("prepay_id", '')
 
+
+class UnifiedOrderH5(WxPayClient):
+    def __init__(self):
+        # 设置接口链接
+        self.url = UNIFIED_ORDER_URL
+        super().__init__()
+
+    def create_xml(self):
+        """生成接口参数xml"""
+        # 检测必填参数
+        if any(self.parameters[key] is None for key in ("out_trade_no", "body", "spbill_create_ip",
+                                                        "total_fee", "notify_url", "trade_type")):
+            raise ValueError("missing parameter")
+        if self.parameters["trade_type"] == "JSAPI" and self.parameters["openid"] is None:
+            raise ValueError("H5 JS API need openid parameters")
+
+        self.parameters["appid"] = wxpay_conf.app_id  # 公众账号ID
+        self.parameters["mch_id"] = wxpay_conf.mch_id  # 商户号
+        self.parameters["nonce_str"] = self.random_str()  # 随机字符串
+        self.parameters["sign"] = self.gen_sign(self.parameters)  # 签名
+        return self.to_xml(self.parameters)
+
+    @gen.coroutine
+    def get_prepay_id(self):
+        """获取prepay_id"""
+        yield self.get_result()
+        return self.result.get("prepay_id", '')
+
+    @gen.coroutine
+    def get_mweb_url(self):
+        yield self.get_result()
+        return self.result.get('mweb_url', '')
+
+    @gen.coroutine
+    def get_data(self):
+        yield self.get_result()
+        return self.result
 
 class JsApi(WxPayBasic):
     """
-      JSAPI 支付--H5网页端掉调起支付接口
+      JSAPI 支付--微信内H5网页端掉调起支付接口
     """
     prepay_id = None  # 使用统一支付接口得到的预支付id
     timestamp = int(time.time())
