@@ -187,6 +187,9 @@ class UnifiedOrder(WxPayClient):
 
 
 class UnifiedOrderH5(WxPayClient):
+    """
+      H5支付--微信外H5网页端掉调起支付接口
+    """
     def __init__(self):
         # 设置接口链接
         self.url = UNIFIED_ORDER_URL
@@ -222,6 +225,63 @@ class UnifiedOrderH5(WxPayClient):
     def get_data(self):
         yield self.get_result()
         return self.result
+
+
+class UnifiedOrderAPP(WxPayClient):
+    """
+      APP支付
+    """
+    def __init__(self):
+        # 设置接口链接
+        self.url = UNIFIED_ORDER_URL
+        super().__init__()
+
+    def create_xml(self):
+        """生成接口参数xml"""
+        # 检测必填参数
+        if any(self.parameters[key] is None for key in ("out_trade_no", "body", "spbill_create_ip",
+                                                        "total_fee", "notify_url", "trade_type")):
+            raise ValueError("missing parameter")
+
+        if self.parameters["trade_type"] != "APP":
+            raise ValueError("trade_type require string APP")
+
+        self.parameters["appid"] = wxpay_conf.app_pay_id  # 公众账号ID
+        self.parameters["mch_id"] = wxpay_conf.app_mch_id  # 商户号
+        self.parameters["nonce_str"] = self.random_str()  # 随机字符串
+        self.parameters["sign"] = self.gen_sign(self.parameters)  # 签名
+        return self.to_xml(self.parameters)
+
+    def gen_sign(self, params, sign_type='MD5'):
+        """生成签名"""
+        # 加密算法选择
+        algo_map = {'MD5': hashlib.md5, 'SHA256': hashlib.sha256}
+
+        # 签名步骤一：按字典序排序参数,format_query_param已做
+        ordered_string = self.format_query_param(params, False)
+        # 签名步骤二：在string后加入KEY
+        raw_string = "{0}&key={1}".format(ordered_string, wxpay_conf.app_key)
+        # 签名步骤三：加密
+        sign = algo_map[sign_type](raw_string.encode('utf8')).hexdigest()
+        # 签名步骤四：所有字符转为大写
+        result_ = sign.upper()
+        return result_
+
+    @gen.coroutine
+    def get_ticket(self):
+        yield self.get_result()
+        data = {}
+        # 吐槽下微信的字段命名之分裂
+        data['prepayid'] = self.result.get("prepay_id")
+        data['appid'] = wxpay_conf.app_pay_id
+        data['partnerid'] = wxpay_conf.app_mch_id
+        data['package'] = "Sign=WXPay"
+        data['noncestr'] = self.random_str()
+        data['timestamp'] = str(int(time.time()))
+        data['sign'] = self.gen_sign(data)
+        if any(value is None for value in data.values()):
+            data = {}
+        return data
 
 
 class JsApi(WxPayBasic):
@@ -270,6 +330,7 @@ class OrderQuery(WxPayClient):
 class WxPayNotify(WxPayBasic):
     """响应型接口基类"""
     SUCCESS, FAIL = "SUCCESS", "FAIL"
+
     def __init__(self):
         self.data = {}  # 接收到的数据
         self.return_parameters = {}  # 返回参数
@@ -301,7 +362,7 @@ class WxPayNotify(WxPayBasic):
 
     def response_xml(self):
         """将xml数据返回微信"""
-        respone_xml = self.create_xml()
+        response_xml = self.create_xml()
         return response_xml
 
 
