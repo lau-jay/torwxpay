@@ -7,12 +7,12 @@ import json
 import time
 import random
 import hashlib
-import better_exceptions
 from urllib.parse import quote
 from xml.etree import ElementTree
 
 from tornado import gen
 from tornado.httpclient import AsyncHTTPClient
+import better_exceptions
 
 from .config import wxpay_conf
 
