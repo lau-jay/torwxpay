@@ -4,3 +4,4 @@ from .wxpay import UnifiedOrder
 from .wxpay import JsApi
 from .wxpay import OrderQuery
 from .wxpay import Notify
+from .wxpay import UnifiedOrderAPP
