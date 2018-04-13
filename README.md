@@ -8,9 +8,12 @@ Base code fork for https://github.com/pyclear/wzhifuSDK
 #### wx_pay_h5
  [Official document](https://pay.weixin.qq.com/wiki/doc/api/H5.php?chapter=9_1)
 ```
+   from tornado import gen
+
    from wxpay import UnifiedOrderH5
    from urllib.parse import quote_plus
 
+   @gen.coroutine
    def pay()
       redirect_url = 'm.example.com'
       scene_info = ''
@@ -41,8 +44,11 @@ Base code fork for https://github.com/pyclear/wzhifuSDK
 
 #### wx_pay_jsapi
 ```
+   from tornado import gen
+
    from wxpay import JsApi, UnifiedOrder
 
+   @gen.coroutine
    def pay()
       redirect_url = 'public.example.com'
       params = {
@@ -74,8 +80,11 @@ Base code fork for https://github.com/pyclear/wzhifuSDK
 
 #### wx_pay_app
 ```
+   from tornado import gen
+
    from wxpay import UnifiedOrderAPP
 
+   @gen.coroutine
    def pay()
       params = {
                   'sign_type': 'MD5',
