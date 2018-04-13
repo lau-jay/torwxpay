@@ -12,11 +12,9 @@ from xml.etree import ElementTree
 
 from tornado import gen
 from tornado.httpclient import AsyncHTTPClient
-import better_exceptions
 
 from .config import wxpay_conf
 
-better_exceptions.MAX_LENGTH = None
 
 # The following is wechat pay current URL, please check before using.
 UNIFIED_ORDER_URL = 'https://api.mch.weixin.qq.com/pay/unifiedorder'
