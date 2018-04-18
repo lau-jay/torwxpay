@@ -1,7 +1,7 @@
 # torwxpay
 Tornado Asynchronous WeChat Pay Operation
 
-Base code fork for https://github.com/pyclear/wzhifuSDK
+Base code fork for https://github.com/Skycrab/wzhifuSDK
 
 ### Usage
 
