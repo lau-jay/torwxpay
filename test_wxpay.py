@@ -28,6 +28,7 @@ class WxPayBasicTest(AsyncTestCase):
         order_str = "appid=asfas&axx=123456&dcebc=xxxx"
         self.assertEqual(self.basic.format_query_param(params, False), order_str)
 
+
 class UnifiedOrderTest(AsyncTestCase):
     pass
 

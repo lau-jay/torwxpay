@@ -12,6 +12,7 @@ Base code fork for https://github.com/Skycrab/wzhifuSDK
 
    from wxpay import UnifiedOrderH5
    from urllib.parse import quote_plus
+   from conf import WechatConfig
 
    @gen.coroutine
    def pay()
@@ -29,7 +30,9 @@ Base code fork for https://github.com/Skycrab/wzhifuSDK
                   "spbill_create_ip": "real_ip",
                   "scene_info": scene_info,
               }
-      unified_order = UnifiedOrderH5()
+      unified_order = UnifiedOrderH5(appid=WechatConfig['appid'],
+                                     mch_id=WechatConfig['mch_id'],
+                                     app_key=WechatConfig['app_key'])
       unified_order.set_params(params)
       try:
           data = yield unified_order.get_data()
@@ -47,6 +50,7 @@ Base code fork for https://github.com/Skycrab/wzhifuSDK
    from tornado import gen
 
    from wxpay import JsApi, UnifiedOrder
+   from conf import WechatConfig
 
    @gen.coroutine
    def pay()
@@ -63,9 +67,12 @@ Base code fork for https://github.com/Skycrab/wzhifuSDK
                   "openid": "open_id",
                   "attach": redirect_url,
               }
-      unified_order = UnifiedOrder()
+      unified_order = UnifiedOrder(appid=WechatConfig['appid'],
+                                   mch_id=WechatConfig['mch_id'],
+                                   app_key=WechatConfig['app_key'])
       unified_order.set_params(params)
-      jsapi = JsApi()
+      jsapi = JsApi(appid=WechatConfig['appid'],
+                    app_key=WechatConfig['app_key'])
       try:
           prepay_id = yield unified_order.get_prepay_id()
       except Exception as e:
@@ -96,7 +103,9 @@ Base code fork for https://github.com/Skycrab/wzhifuSDK
                   'trade_type': 'APP',
                   "spbill_create_ip": "real_ip",
               }
-      unified_order = UnifiedOrderAPP()
+      unified_order = UnifiedOrderAPP(appid=WechatConfig['mobile_app_id'],
+                                      mch_id=WechatConfig['mobile_mch_id'],
+                                      app_key=WechatConfig['app_key'])
       unified_order.set_params(params)
       try:
           data = yield unified_order.get_ticket()
