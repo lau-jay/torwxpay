@@ -304,6 +304,64 @@ class JsApi(WxPayBasic):
         return json.dumps(js_api_obj)
 
 
+class QR(WxPayClient):
+    def create_xml(self):
+        """生成接口参数xml"""
+        # 检测必填参数
+        if any(self.parameters[key] is None for key in ("out_trade_no", "body", "spbill_create_ip",
+                                                        "total_fee", "notify_url", "trade_type")):
+            raise ValueError("missing parameter")
+
+        self.parameters["appid"] = wxpay_conf.app_id  # 公众账号ID
+        self.parameters["mch_id"] = wxpay_conf.mch_id  # 商户号
+        self.parameters["nonce_str"] = self.random_str()  # 随机字符串
+        self.parameters["sign"] = self.gen_sign(self.parameters)  # 签名
+        return self.to_xml(self.parameters)
+
+    @gen.coroutine
+    def get_code_url(self):
+        """获取prepay_id"""
+        yield self.get_result()
+        return self.result.get("code_url", '')
+
+
+class MicroProgram(WxPayClient):
+    def create_xml(self):
+        """生成接口参数xml"""
+        # 检测必填参数
+        if any(self.parameters[key] is None for key in ("out_trade_no", "body", "spbill_create_ip",
+                                                        "total_fee", "notify_url", "trade_type")):
+            raise ValueError("missing parameter")
+
+        self.parameters["appid"] = wxpay_conf.app_mini_id  # 小程序ID
+        self.parameters["mch_id"] = wxpay_conf.mch_id  # 商户号, 注意开通小程序支付
+        self.parameters["nonce_str"] = self.random_str()  # 随机字符串
+        self.parameters["sign"] = self.gen_sign(self.parameters)  # 签名
+        return self.to_xml(self.parameters)
+
+    @gen.coroutine
+    def get_prepay_id(self):
+        """获取prepay_id"""
+        yield self.get_result()
+        return self.result.get("prepay_id", '')
+
+    @staticmethod
+    @gen.coroutine
+    def get_weixin_pay_data(self):
+        prepay_id = yield self.get_prepay_id()
+        assert prepay_id
+
+        again_sign = {}
+        again_sign["appId"] = wxpay_conf.app_mini_id  # 小程序ID
+        again_sign["timeStamp"] = int(time.time())  # 时间戳从1970年1月1日00:00:00至今的秒数,即当前的时间
+        again_sign["nonceStr"] = self.create_onceStr()  # 随机字符串
+        again_sign["package"] = "prepay_id={0}".format(prepay_id)
+        again_sign["paySign"] = self.gen_sign(again_sign).decode("utf8")  # 签名
+        again_sign["signType"] = "MD5"
+        del again_sign["appId"]
+        return again_sign
+
+
 class OrderQuery(WxPayClient):
     """订单查询接口"""
     def __init__(self):
