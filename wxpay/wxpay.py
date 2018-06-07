@@ -93,15 +93,10 @@ class WxPayBasic:
         """
         algo_map = {'MD5': hashlib.md5, 'SHA256': hashlib.sha256}
 
-        # 签名步骤一：按字典序排序参数,format_query_param已做
         ordered_string = self.format_query_param(params, False)
-        # 签名步骤二：在string后加入KEY
         raw_string = "{0}&key={1}".format(ordered_string, app_key)
-        # 签名步骤三：加密
         sign = algo_map[sign_type](raw_string.encode('utf8')).hexdigest()
-        # 签名步骤四：所有字符转为大写
-        result_ = sign.upper()
-        return result_
+        return sign.upper()
 
     def to_xml(self, params):
         """dict to xml"""
@@ -122,46 +117,49 @@ class WxPayBasic:
 
     @gen.coroutine
     def post_xml_async(self, url, xml):
-        """以post方式提交xml到对应的接口url"""
+        """ post method up xml format data to url"""
         res = yield HtppClient.post_xml(url, xml)
         return res
 
     @gen.coroutine
     def post_xml_SSL_async(self, url, xml):
-        """使用证书，以post方式提交xml到对应的接口url"""
+        """ add ssl post method up xml format data to url"""
         res = yield HtppClient.post_xml_SSL(url, xml)
         return res
 
 
 class WxPayClient(WxPayBasic):
-    """请求型接口的基类"""
-    response = None  # 微信返回的响应
-    url = None      # 接口链接
+    """ WXPay Client class"""
+    response = None  # wechat respone
+    url = None      # target url
 
     def __init__(self, appid='', mch_id='', app_key=''):
-        self.parameters = {}  # 请求参数
-        self.result = {}      # 返回参数
+        """
+        need appid, mch_id and app_key
+        there argument request from wechat
+        """
+        self.parameters = {}
+        self.result = {}
         self.appid = appid
         self.mch_id = mch_id
         self.app_key = app_key
         assert all([appid, mch_id, app_key]), 'argument missing'
 
     def set_params(self, params):
-        """设置请求参数"""
+        """ set arguments"""
         for k, v in params.items():
             self.parameters[self.trim_string(k)] = self.trim_string(v)
 
     def create_xml(self):
-        """设置标配的请求参数，生成签名，生成接口参数xml"""
-        self.parameters["appid"] = self.appid  # 公众账号ID
-        self.parameters["mch_id"] = self.mch_id   # 商户号
-        self.parameters["nonce_str"] = self.random_str()   # 随机字符串
-        self.parameters["sign"] = self.gen_sign(self.parameters, app_key=self.app_key)  # 签名
+        """ generator xml format arguments"""
+        self.parameters["appid"] = self.appid
+        self.parameters["mch_id"] = self.mch_id
+        self.parameters["nonce_str"] = self.random_str()
+        self.parameters["sign"] = self.gen_sign(self.parameters, app_key=self.app_key)
         return self.to_xml(self.parameters)
 
     @gen.coroutine
     def get_result(self):
-        """获取结果，默认不使用证书"""
         yield self.post_xml()
         self.result = self.to_dict(self.response)
 
@@ -174,27 +172,24 @@ class WxPayClient(WxPayBasic):
 class UnifiedOrder(WxPayClient):
     """统一支付接口类"""
     def __init__(self, appid='', mch_id='', app_key=''):
-        # 设置接口链接
-        self.url = UNIFIED_ORDER_URL
+        self.url = UNIFIED_ORDER_URL  # target url
         self.appid = appid
         self.mch_id = mch_id
         self.app_key = app_key
         assert all([appid, mch_id, app_key]), 'argument mssing'
 
     def create_xml(self):
-        """生成接口参数xml"""
-        # 检测必填参数
         if any(self.parameters[key] is None for key in ("out_trade_no", "body",
                                                         "total_fee", "notify_url", "trade_type")):
             raise ValueError("missing parameter")
         if self.parameters["trade_type"] == "JSAPI" and self.parameters["openid"] is None:
             raise ValueError("JSAPI need openid parameters")
 
-        self.parameters["appid"] = self.appid  # 公众账号ID
-        self.parameters["mch_id"] = self.mch_id  # 商户号
-        self.parameters["spbill_create_ip"] = "127.0.0.1"  # 终端ip
-        self.parameters["nonce_str"] = self.random_str()  # 随机字符串
-        self.parameters["sign"] = self.gen_sign(self.parameters, app_key=self.app_key)  # 签名
+        self.parameters["appid"] = self.appid
+        self.parameters["mch_id"] = self.mch_id
+        self.parameters["spbill_create_ip"] = "127.0.0.1"
+        self.parameters["nonce_str"] = self.random_str()
+        self.parameters["sign"] = self.gen_sign(self.parameters, app_key=self.app_key)
         return self.to_xml(self.parameters)
 
     @gen.coroutine
@@ -205,11 +200,7 @@ class UnifiedOrder(WxPayClient):
 
 
 class UnifiedOrderH5(WxPayClient):
-    """
-      H5支付--微信外H5网页端掉调起支付接口
-    """
     def __init__(self, appid='', mch_id='', app_key=''):
-        # 设置接口链接
         self.url = UNIFIED_ORDER_URL
         self.appid = appid
         self.mch_id = mch_id
@@ -217,18 +208,16 @@ class UnifiedOrderH5(WxPayClient):
         assert all([appid, mch_id, app_key]), 'argument mssing'
 
     def create_xml(self):
-        """生成接口参数xml"""
-        # 检测必填参数
         if any(self.parameters[key] is None for key in ("out_trade_no", "body", "spbill_create_ip",
                                                         "total_fee", "notify_url", "trade_type")):
             raise ValueError("missing parameter")
         if self.parameters["trade_type"] == "JSAPI" and self.parameters["openid"] is None:
             raise ValueError("H5 JS API need openid parameters")
 
-        self.parameters["appid"] = self.app_id  # 公众账号ID
-        self.parameters["mch_id"] = self.mch_id  # 商户号
-        self.parameters["nonce_str"] = self.random_str()  # 随机字符串
-        self.parameters["sign"] = self.gen_sign(self.parameters, app_key=self.app_key)  # 签名
+        self.parameters["appid"] = self.app_id
+        self.parameters["mch_id"] = self.mch_id
+        self.parameters["nonce_str"] = self.random_str()
+        self.parameters["sign"] = self.gen_sign(self.parameters, app_key=self.app_key)
         return self.to_xml(self.parameters)
 
     @gen.coroutine
@@ -249,11 +238,7 @@ class UnifiedOrderH5(WxPayClient):
 
 
 class UnifiedOrderAPP(WxPayClient):
-    """
-      APP支付
-    """
     def __init__(self, appid='', mch_id='', app_key=''):
-        # 设置接口链接
         self.url = UNIFIED_ORDER_URL
         self.appid = appid
         self.mch_id = mch_id
@@ -261,8 +246,6 @@ class UnifiedOrderAPP(WxPayClient):
         assert all([appid, mch_id, app_key]), 'argument mssing'
 
     def create_xml(self):
-        """生成接口参数xml"""
-        # 检测必填参数
         if any(self.parameters[key] is None for key in ("out_trade_no", "body", "spbill_create_ip",
                                                         "total_fee", "notify_url", "trade_type")):
             raise ValueError("missing parameter")
@@ -274,8 +257,8 @@ class UnifiedOrderAPP(WxPayClient):
         # app支付会另外生成商户号。特别坑
         self.parameters["appid"] = self.appid
         self.parameters["mch_id"] = self.mch_id
-        self.parameters["nonce_str"] = self.random_str()  # 随机字符串
-        self.parameters["sign"] = self.gen_sign(self.parameters, app_key=self.app_key)  # 签名
+        self.parameters["nonce_str"] = self.random_str()
+        self.parameters["sign"] = self.gen_sign(self.parameters, app_key=self.app_key)
         return self.to_xml(self.parameters)
 
     @gen.coroutine
@@ -296,25 +279,18 @@ class UnifiedOrderAPP(WxPayClient):
 
 
 class JsApi(WxPayBasic):
-    """
-      JSAPI 支付--微信内H5网页端掉调起支付接口
-    """
-    prepay_id = None  # 使用统一支付接口得到的预支付id
-    timestamp = int(time.time())
-
     def __init__(self, appid='', app_key=''):
         self.appid = appid
         self.app_key = app_key
         assert all([appid, app_key]), 'argument mssing'
 
     def set_prepay_id(self, prepay_id):
-        """设置prepay_id"""
         self.prepay_id = prepay_id
 
     def get_parameters(self):
         js_api_obj = {}
         js_api_obj["appId"] = self.appid
-        js_api_obj["timeStamp"] = "{0}".format(self.timestamp)
+        js_api_obj["timeStamp"] = int(time.time())
         js_api_obj["nonceStr"] = self.random_str()
         js_api_obj["package"] = "prepay_id={0}".format(self.prepay_id)
         js_api_obj["signType"] = "MD5"
@@ -330,16 +306,14 @@ class QR(WxPayClient):
         assert all([appid, mch_id, app_key]), 'argument mssing'
 
     def create_xml(self):
-        """生成接口参数xml"""
-        # 检测必填参数
         if any(self.parameters[key] is None for key in ("out_trade_no", "body", "spbill_create_ip",
                                                         "total_fee", "notify_url", "trade_type")):
             raise ValueError("missing parameter")
 
-        self.parameters["appid"] = self.appid  # 公众账号ID
-        self.parameters["mch_id"] = self.mch_id  # 商户号
-        self.parameters["nonce_str"] = self.random_str()  # 随机字符串
-        self.parameters["sign"] = self.gen_sign(self.parameters, app_key=self.app_key)  # 签名
+        self.parameters["appid"] = self.appid
+        self.parameters["mch_id"] = self.mch_id
+        self.parameters["nonce_str"] = self.random_str()
+        self.parameters["sign"] = self.gen_sign(self.parameters, app_key=self.app_key)
         return self.to_xml(self.parameters)
 
     @gen.coroutine
@@ -357,16 +331,14 @@ class MiniProgram(WxPayClient):
         assert all([appid, mch_id, app_key]), 'argument mssing'
 
     def create_xml(self):
-        """生成接口参数xml"""
-        # 检测必填参数
         if any(self.parameters[key] is None for key in ("out_trade_no", "body", "spbill_create_ip",
                                                         "total_fee", "notify_url", "trade_type")):
             raise ValueError("missing parameter")
 
-        self.parameters["appid"] = self.appid  # 小程序ID
+        self.parameters["appid"] = self.appid
         self.parameters["mch_id"] = self.mch_id  # 商户号, 注意开通小程序支付
-        self.parameters["nonce_str"] = self.random_str()  # 随机字符串
-        self.parameters["sign"] = self.gen_sign(self.parameters, app_key=self.app_key)  # 签名
+        self.parameters["nonce_str"] = self.random_str()
+        self.parameters["sign"] = self.gen_sign(self.parameters, app_key=self.app_key)
         return self.to_xml(self.parameters)
 
     @gen.coroutine
@@ -383,11 +355,11 @@ class MiniProgram(WxPayClient):
 
         again_sign = {}
         again_sign["appId"] = self.appid  # 小程序ID
-        again_sign["timeStamp"] = int(time.time())  # 时间戳从1970年1月1日00:00:00至今的秒数,即当前的时间
-        again_sign["nonceStr"] = self.create_onceStr()  # 随机字符串
+        again_sign["timeStamp"] = int(time.time())
+        again_sign["nonceStr"] = self.create_onceStr()
         again_sign["package"] = "prepay_id={0}".format(prepay_id)
         again_sign["signType"] = "MD5"
-        again_sign["paySign"] = self.gen_sign(again_sign, app_key=self.app_key)  # 签名
+        again_sign["paySign"] = self.gen_sign(again_sign, app_key=self.app_key)
         del again_sign["appId"]
         return again_sign
 
