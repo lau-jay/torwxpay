@@ -5,6 +5,7 @@
 
 import json
 import time
+import string
 import random
 import hashlib
 from urllib.parse import quote
@@ -58,7 +59,7 @@ class WxPayBasic:
         return value
 
     def random_str(self, length=16):
-        chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        chars = ''.join([string.ascii_letters, string.digits])
         sa = []
         for _ in range(length):
             sa.append(random.choice(chars))
@@ -179,8 +180,9 @@ class UnifiedOrder(WxPayClient):
         assert all([appid, mch_id, app_key]), 'argument mssing'
 
     def create_xml(self):
-        if any(self.parameters[key] is None for key in ("out_trade_no", "body",
-                                                        "total_fee", "notify_url", "trade_type")):
+        if not all(self.parameters.get(key, None) for key in ("out_trade_no", "body",
+                                                              "total_fee", "notify_url",
+                                                              "trade_type")):
             raise ValueError("missing parameter")
         if self.parameters["trade_type"] == "JSAPI" and self.parameters["openid"] is None:
             raise ValueError("JSAPI need openid parameters")
@@ -208,8 +210,8 @@ class UnifiedOrderH5(WxPayClient):
         assert all([appid, mch_id, app_key]), 'argument mssing'
 
     def create_xml(self):
-        if any(self.parameters[key] is None for key in ("out_trade_no", "body", "spbill_create_ip",
-                                                        "total_fee", "notify_url", "trade_type")):
+        if not all(self.parameters.get(key, None) for key in ("out_trade_no", "body", "spbill_create_ip",
+                                                              "total_fee", "notify_url", "trade_type")):
             raise ValueError("missing parameter")
         if self.parameters["trade_type"] == "JSAPI" and self.parameters["openid"] is None:
             raise ValueError("H5 JS API need openid parameters")
@@ -246,8 +248,8 @@ class UnifiedOrderAPP(WxPayClient):
         assert all([appid, mch_id, app_key]), 'argument mssing'
 
     def create_xml(self):
-        if any(self.parameters[key] is None for key in ("out_trade_no", "body", "spbill_create_ip",
-                                                        "total_fee", "notify_url", "trade_type")):
+        if not all(self.parameters.get(key, None) for key in ("out_trade_no", "body", "spbill_create_ip",
+                                                              "total_fee", "notify_url", "trade_type")):
             raise ValueError("missing parameter")
 
         if self.parameters["trade_type"] != "APP":
@@ -273,7 +275,7 @@ class UnifiedOrderAPP(WxPayClient):
         data['noncestr'] = self.random_str()
         data['timestamp'] = str(int(time.time()))
         data['sign'] = self.gen_sign(data, app_key=self.app_key)
-        if any(value is None for value in data.values()):
+        if not all(value for value in data.values()):
             data = {}
         return data
 
@@ -306,7 +308,7 @@ class QR(WxPayClient):
         assert all([appid, mch_id, app_key]), 'argument mssing'
 
     def create_xml(self):
-        if any(self.parameters[key] is None for key in ("out_trade_no", "body", "spbill_create_ip",
+        if not all(self.parameters.get(key) for key in ("out_trade_no", "body", "spbill_create_ip",
                                                         "total_fee", "notify_url", "trade_type")):
             raise ValueError("missing parameter")
 
