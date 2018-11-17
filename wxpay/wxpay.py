@@ -1,16 +1,12 @@
-#!/usr/bin/env python3
-# coding=utf-8
-# author Pyclearl
 import json
 import time
-from tornado.escape import json_decode
 from tornado.httpclient import AsyncHTTPClient
-
 from .utils import to_dict, to_xml, random_str, gen_sign
 
 # The following is wechat pay current URL, please check before using.
 UNIFIED_ORDER_URL = 'https://api.mch.weixin.qq.com/pay/unifiedorder'
 ORDER_QUERY_URL = 'https://api.mch.weixin.qq.com/pay/orderquery'
+CLOSE_ORDER_URL = "https://api.mch.weixin.qq.com/pay/closeorder"
 
 
 class WeiXinPayParamError(ValueError):
@@ -29,10 +25,9 @@ class WxPayBasic:
         self.appid = app_id
         self.mch_id = mch_id
         self.app_key = app_key
-        self.url = UNIFIED_ORDER_URL
         assert all([app_id, mch_id, app_key]), 'argument missing'
 
-    async def post(self, url, *, data=None, is_ssl=False):
+    async def _post(self, url, *, data=None, is_ssl=False):
         request = AsyncHTTPClient(force_instance=True,
                                   defaults={'Content-Type': 'text/xml'})
         assert data
@@ -64,8 +59,34 @@ class WxPayBasic:
             payload["spbill_create_ip"] = "127.0.0.1"
         payload["nonce_str"] = random_str()
         payload["sign"] = gen_sign(payload, app_key=self.app_key)
-        res = await self.post(**payload)
+        res = await self._post(UNIFIED_ORDER_URL, **payload)
         return res
+
+    async def query_order(self, **kwargs):
+        # 二者必填其一
+        if not any(kwargs.get(key, '') for key in ("out_trade_no", "transaction_id",)):
+            raise ValueError("missing parameter")
+        payload = dict()
+
+        payload["appid"] = self.appid  # 公众账号ID
+        payload["mch_id"] = self.mch_id  # 商户号
+        payload["nonce_str"] = random_str()  # 随机字符串
+        payload["sign"] = gen_sign(payload, app_key=self.app_key)  # 签名
+        return await self._post(ORDER_QUERY_URL, **payload)
+
+    async def close_order(self, **kwargs):
+        if not kwargs.get("out_trade_no", ''):
+            raise ValueError("missing parameter out_trade_noe")
+        payload = dict()
+        payload["appid"] = self.appid  # 公众账号ID
+        payload["mch_id"] = self.mch_id  # 商户号
+        payload["nonce_str"] = random_str()  # 随机字符串
+        payload["sign"] = gen_sign(payload, app_key=self.app_key)  # 签名
+        return await self._post(CLOSE_ORDER_URL, **kwargs)
+
+    def replay(self, msg, ok=True):
+        code = "SUCCESS" if ok else "FAIL"
+        return to_xml(dict(return_code=code, return_msg=msg))
 
     async def prepay_id(self, **kwargs):
         res = await self.unified_order(**kwargs)
