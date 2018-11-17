@@ -148,9 +148,9 @@ class WxPayQR(WxPayBasic):
     def __init__(self, **config):
         super().__init__(**config)
 
-    async def get_code_url(self):
+    async def get_code_url(self, **kwargs):
         """获取prepay_id"""
-        res = await self.unified_order()
+        res = await self.unified_order(**kwargs)
         prepay_id = res.get("code_url", '')
         return prepay_id
 
@@ -159,8 +159,8 @@ class WxPayMiniProgram(WxPayBasic):
     def __init__(self, **config):
         super().__init__(**config)
 
-    async def get_wx_pay_data(self):
-        prepay_id = await self.prepay_id()
+    async def get_wx_pay_data(self, **kwargs):
+        prepay_id = await self.prepay_id(**kwargs)
         assert prepay_id, '获取prepay_id失败'
 
         again_sign = dict()
