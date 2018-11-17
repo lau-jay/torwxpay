@@ -119,3 +119,36 @@ Base code fork for https://github.com/Skycrab/wzhifuSDK
 
 ```
 
+#### wx_pay_code
+```
+   from tornado import gen
+
+   from wxpay import UnifiedOrderAPP
+
+   @gen.coroutine
+   def pay()
+      params = {
+                  'sign_type': 'MD5',
+                  'body': 'example',
+                  'detail': 'example h5 pay',
+                  'out_trade_no': 'zzz-xxxx-yyy',
+                  'total_fee': 100,
+                  'notify_url': 'http://example.com/notification',
+                  'trade_type': 'APP',
+                  "spbill_create_ip": "real_ip",
+              }
+      unified_order = UnifiedOrderAPP(appid=WechatConfig['mobile_app_id'],
+                                      mch_id=WechatConfig['mobile_mch_id'],
+                                      app_key=WechatConfig['app_key'])
+      unified_order.set_params(params)
+      try:
+          data = yield unified_order.get_ticket()
+      except Exception as e:
+          """
+            your code
+          """
+          return
+      assert data
+      return data
+
+```
