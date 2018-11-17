@@ -13,7 +13,7 @@ def random_str(length=16):
     return ''.join(sa)
 
 
-def format_query_param(params, is_urlencode=False):
+def format_query_param(params, *, is_urlencode=False):
     """
     order params
     >>> params = {'appid': 'wxd930ea5d5a258f4f', 'mch_id': '10000100', 'device_info': 1000,
@@ -29,7 +29,7 @@ def format_query_param(params, is_urlencode=False):
     return "&".join(tmp)
 
 
-def gen_sign(params, sign_type='MD5', app_key=None):
+def gen_sign(params, *, sign_type='MD5', app_key=None):
     """
     gen sign
     default sign type 'MD5', testing data from official document
