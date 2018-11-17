@@ -3,6 +3,10 @@ Tornado Asynchronous WeChat Pay Operation
 
 Base code fork for https://github.com/Skycrab/wzhifuSDK
 
+### Important
+
+* Python >= 3.6 required
+
 ### Usage
 
 #### wx_pay_h5
