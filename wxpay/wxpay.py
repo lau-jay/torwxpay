@@ -65,15 +65,15 @@ class WxPayBasic:
         return res
 
     async def query_order(self, **kwargs):
-        # 二者必填其一
+        # out_trade_no or transaction_id need be give one
         if not any(kwargs.get(key, '') for key in ("out_trade_no", "transaction_id",)):
             raise ValueError("missing parameter")
         payload = dict()
         payload.update(kwargs)
         payload["appid"] = self.appid  # 公众账号ID
         payload["mch_id"] = self.mch_id  # 商户号
-        payload["nonce_str"] = random_str()  # 随机字符串
-        payload["sign"] = gen_sign(payload, app_key=self.app_key)  # 签名
+        payload["nonce_str"] = random_str()
+        payload["sign"] = gen_sign(payload, app_key=self.app_key)
         return await self._post(ORDER_QUERY_URL, data=payload)
 
     async def close_order(self, **kwargs):
@@ -83,8 +83,8 @@ class WxPayBasic:
         payload.update(kwargs)
         payload["appid"] = self.appid  # 公众账号ID
         payload["mch_id"] = self.mch_id  # 商户号
-        payload["nonce_str"] = random_str()  # 随机字符串
-        payload["sign"] = gen_sign(payload, app_key=self.app_key)  # 签名
+        payload["nonce_str"] = random_str()
+        payload["sign"] = gen_sign(payload, app_key=self.app_key)
         return await self._post(CLOSE_ORDER_URL, data=payload)
 
     def replay(self, msg, ok=True):
@@ -135,6 +135,7 @@ class WxPayH5(WxPayBasic):
         super().__init__(**config)
 
     async def get_mweb_url(self, **kwargs):
+        """get mweb url for frontend join url"""
         res = await self.unified_order(**kwargs)
         mweb_url = res.get("mweb_url", '')
         return mweb_url
@@ -149,7 +150,7 @@ class WxPayQR(WxPayBasic):
         super().__init__(**config)
 
     async def get_code_url(self, **kwargs):
-        """获取prepay_id"""
+        """get code url for frontend create pay QR"""
         res = await self.unified_order(**kwargs)
         prepay_id = res.get("code_url", '')
         return prepay_id
@@ -161,10 +162,10 @@ class WxPayMiniProgram(WxPayBasic):
 
     async def get_wx_pay_data(self, **kwargs):
         prepay_id = await self.prepay_id(**kwargs)
-        assert prepay_id, '获取prepay_id失败'
+        assert prepay_id, 'get prepay_id fail'
 
         again_sign = dict()
-        again_sign["appId"] = self.appid  # 小程序ID
+        again_sign["appId"] = self.appid  # mini program ID
         again_sign["timeStamp"] = str(int(time.time()))
         again_sign["nonceStr"] = random_str()
         again_sign["package"] = "prepay_id={0}".format(prepay_id)
