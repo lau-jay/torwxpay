@@ -34,7 +34,7 @@ Tornado Asynchronous WeChat Pay Operation
                                      mch_id=WechatConfig['mch_id'],
                                      app_key=WechatConfig['app_key'])
       try:
-          mweb_url = await wxpay.get_mweb_url(**param)
+          mweb_url = await wxpay.get_mweb_url(**params)
       except Exception as e:
           """
             your code
@@ -97,7 +97,7 @@ Tornado Asynchronous WeChat Pay Operation
                                       mch_id=WechatConfig['mobile_mch_id'],
                                       app_key=WechatConfig['app_key'])
       try:
-          data = await wxpay.get_ticket(**param)
+          data = await wxpay.get_ticket(**params)
       except Exception as e:
           """
             your code
