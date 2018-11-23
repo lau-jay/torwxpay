@@ -9,7 +9,7 @@ with open('LICENSE') as f:
 
 setup(
     name='torwxpay',
-    version='0.0.0',
+    version='0.0.1',
     description='async wxpay for tornado',
     long_description=readme,
     author='jay lau',
