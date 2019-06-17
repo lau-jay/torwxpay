@@ -7,6 +7,8 @@ name = "pypi"
 tornado = "==5.1"
 
 [dev-packages]
+pre-commit = "*"
+flake8 = "*"
 
 [requires]
 python_version = "3.7"

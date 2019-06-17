@@ -8,11 +8,11 @@ from xml.etree import ElementTree
 class WeChat:
     @staticmethod
     def random_str(length=16):
-        chars = ''.join([string.ascii_letters, string.digits])
+        chars = "".join([string.ascii_letters, string.digits])
         sa = []
         for _ in range(length):
             sa.append(random.choice(chars))
-        return ''.join(sa)
+        return "".join(sa)
 
     @staticmethod
     def format_query_param(params, *, is_urlencode=False):
@@ -27,11 +27,11 @@ class WeChat:
         tmp = []
         for k in ordered_params:
             v = quote(params[k]) if is_urlencode else params[k]
-            tmp.append("{0}={1}".format(k, v))
+            tmp.append(f"{k}={v}")
         return "&".join(tmp)
 
     @staticmethod
-    def gen_sign(params, *, sign_type='MD5', app_key=None):
+    def gen_sign(params, *, sign_type="MD5", app_key=None):
         """
         gen sign
         default sign type 'MD5', testing data from official document
@@ -41,10 +41,10 @@ class WeChat:
         >>> WeChat.gen_sign(params, app_key=app_key)
         '9A0A8659F005D6984697E2CA0A9CF3B7'
         """
-        algo_map = {'MD5': hashlib.md5, 'SHA256': hashlib.sha256}
+        algo_map = {"MD5": hashlib.md5, "SHA256": hashlib.sha256}
         ordered_string = WeChat.format_query_param(params, False)
-        raw_string = "{0}&key={1}".format(ordered_string, app_key)
-        sign = algo_map[sign_type](raw_string.encode('utf8')).hexdigest()
+        raw_string = f"{ordered_string}&key={app_key}"
+        sign = algo_map[sign_type](raw_string.encode("utf8")).hexdigest()
         return sign.upper()
 
     @staticmethod
@@ -53,9 +53,9 @@ class WeChat:
         xml = ["<xml>"]
         for k, v in params.items():
             if v.isdigit():
-                xml.append("<{0}>{1}</{0}>".format(k, v))
+                xml.append(f"<{k}>{v}</{k}>")
             else:
-                xml.append("<{0}><![CDATA[{1}]]></{0}>".format(k, v))
+                xml.append(f"<{k}><![CDATA[{v}]]></{k}>")
         xml.append("</xml>")
         return "".join(xml)
 
@@ -67,7 +67,7 @@ class WeChat:
         return data
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import doctest
 
     doctest.testmod(verbose=True)
